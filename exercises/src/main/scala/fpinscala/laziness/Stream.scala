@@ -95,4 +95,12 @@ object Stream {
     case Some((a, s)) => Stream.cons(a, Stream.unfold(s)(f))
     case _ => Stream.empty
   }
+
+  def fibsViaUnfold(): Stream[Int] = Stream.unfold((0, 1))(prev => Some((prev._1, (prev._2, prev._1 + prev._2))))
+
+  def fromViaUnfold(n: Int): Stream[Int] = Stream.unfold(n)(s => Some(s, s + 1))
+
+  def constantViaUnfold[A](a: A): Stream[A] = Stream.unfold(a)(s => Some(s, s))
+
+  def onesViaUnfold: Stream[Int] = Stream.constantViaUnfold(1)
 }
