@@ -108,6 +108,16 @@ trait Stream[+A] {
     case Cons(_, t) => Some(s, t())
     case _ => None
   })
+
+  /*
+   * Cannot be implemented with unfold in a time complexity of O(n)
+   * since an output value at a position should be generated after applying
+   * function f with elements that appears later in the input stream.
+   */
+  def scanRight[B>:A](z: B)(f: (B, B) => B): Stream[B] = foldRight(cons(z, empty))((a, as) => as match {
+    case Cons(h, _) => cons(f(a, h()), as)
+    case Empty => empty     // will not happen
+  })
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
