@@ -62,6 +62,42 @@ trait Stream[+A] {
   // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
   // writing your own function signatures.
 
+  def mapViaUnfold[B](f: A => B): Stream[B] = unfold(this)(s => s match {
+    case Empty => None
+    case Cons(h, t) => Some((f(h()), t()))
+  })
+
+  def takeViaUnfold(n: Int): Stream[A] = unfold((n, this))(s => s match {
+    case (i, Cons(h, t)) if (i > 0) => Some(h(), (i - 1, t()))
+    case _ => None
+  })
+
+  def takeWhileViaUnfold(p: A => Boolean): Stream[A] = unfold(this)(s => s match {
+    case Cons(h, t) if (p(h())) => Some(h(), t())
+    case _ => None
+  })
+
+  def zipWith[B, C](b: Stream[B])(f: (A, B) => C): Stream[C] = unfold((this, b))(s => s match {
+    case (Cons(ha, ta), Cons(hb, tb)) => Some((f(ha(), hb()), (ta(), tb())))
+    case _ => None
+  })
+
+  def zipAll[B](s2: Stream[B]): Stream[(Option[A], Option[B])] = unfold((this, s2))(z => {
+    val (za, zb) = z
+    val (a, sa) = za match {
+      case Cons(h, t) => (Some(h()), t())
+      case Empty => (None, empty)
+    }
+    val (b, sb) = zb match {
+      case Cons(h, t) => (Some(h()), t())
+      case Empty => (None, empty)
+    }
+    (a, b) match {
+      case (None, None) => None
+      case _ => Some(((a, b), (sa, sb)))
+    }
+  })
+
   def startsWith[B](s: Stream[B]): Boolean = ???
 }
 case object Empty extends Stream[Nothing]
