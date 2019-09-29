@@ -68,6 +68,9 @@ object RNG {
     go(count, rng, List())
   }
 
+  def doubleViaMap(rng: RNG): (Double, RNG) =
+    map(nonNegativeInt)(i => (i.toDouble / (1.0 + Int.MaxValue.toDouble)))(rng)
+
   def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
 
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
