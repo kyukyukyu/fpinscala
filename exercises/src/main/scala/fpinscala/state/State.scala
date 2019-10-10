@@ -124,5 +124,24 @@ object State {
   def unit[S,A](a: A): State[S, A] = State(s => (a, s))
   def sequence[S,A](fs: List[State[S, A]]): State[S, List[A]] =
     fs.foldRight(unit[S,List[A]](List()))((f, acc) => f.map2(acc)(_ :: _))
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+}
+
+object Candy {
+  def get[S]: State[S, S] = State(s => (s, s))
+  def set[S](s: S): State[S, Unit] = State(_ => ((), s))
+  def modify[S](f: S => S): State[S, Unit] = for {
+    s <- get
+    _ <- set(f(s))
+  } yield ()
+  def update = (i: Input) => (s: Machine) => (i, s) match {
+    case (_, Machine(_, 0, _)) => s
+    case (Turn, Machine(true, _, _)) => s
+    case (Coin, Machine(false, _, _)) => s
+    case (Coin, Machine(true, candies, coins)) => Machine(false, candies, coins + 1)
+    case (Turn, Machine(false, candies, coins)) => Machine(true, candies - 1, coins)
+  }
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for {
+    _ <- State.sequence(inputs.map(i => modify(update(i))))
+    s <- get
+  } yield (s.coins, s.candies)
 }
