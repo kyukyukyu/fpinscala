@@ -40,8 +40,20 @@ object Par {
 
   def sortPar(parList: Par[List[Int]]) = map(parList)(_.sorted)
 
-  def sequence[A](ps: List[Par[A]]): Par[List[A]] =
+  def sequence_simple[A](ps: List[Par[A]]): Par[List[A]] =
     ps.foldRight(unit(List[A]()))((h, t) => map2(h, t)(_ :: _))
+
+  def sequenceBalanced[A](ps: IndexedSeq[Par[A]]): Par[IndexedSeq[A]] = fork {
+    if (ps.isEmpty) unit(Vector())
+    else if (ps.length == 1) map(ps.head)(a => Vector(a))
+    else {
+      val (l, r) = ps.splitAt(ps.length / 2)
+      map2(sequenceBalanced(l), sequenceBalanced(r))(_ ++ _)
+    }
+  }
+
+  def sequence[A](ps: List[Par[A]]): Par[List[A]] =
+    map(sequenceBalanced(ps.toIndexedSeq))(_.toList)
 
   def parMap[A,B](ps: List[A])(f: A => B): Par[List[B]] = fork {
     val fbs: List[Par[B]] = ps.map(asyncF(f))
